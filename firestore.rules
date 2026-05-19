@@ -1,0 +1,116 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Primitive Definitions
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isOwner(data) { return isSignedIn() && data.userId == request.auth.uid; }
+    
+    // Pillar 2: Validation Blueprints (Anti-Update-Gap)
+    function isValidSubject(data) {
+      return data.keys().hasAll(['id', 'userId', 'name']) && 
+             data.keys().size() >= 3 &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 200;
+    }
+
+    function isValidStudent(data) {
+      return data.keys().hasAll(['id', 'userId', 'name', 'class']) &&
+             data.keys().size() >= 4 &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+             data.class is string && data.class.size() > 0 && data.class.size() <= 50;
+    }
+
+    function isValidJournal(data) {
+      return data.keys().hasAll(['id', 'userId', 'date', 'subjectId', 'topic']) &&
+             data.keys().size() >= 5 &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.date is string &&
+             data.subjectId is string && data.subjectId.size() <= 128 &&
+             data.topic is string && data.topic.size() > 0 && data.topic.size() <= 500;
+    }
+
+    function isValidAttendance(data) {
+      return data.keys().hasAll(['id', 'userId', 'date', 'studentId', 'subjectId', 'status']) &&
+             data.keys().size() >= 6 &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.status in ['Hadir', 'Sakit', 'Izin', 'Alpa'];
+    }
+
+    function isValidAssessment(data) {
+      return data.keys().hasAll(['id', 'userId', 'date', 'studentId', 'subjectId', 'score']) &&
+             data.keys().size() >= 6 &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.score is number && data.score >= 0 && data.score <= 100;
+    }
+
+    // Collection Rules
+    
+    match /test/{docId} {
+      allow read: if isSignedIn();
+    }
+
+    match /subjects/{subjectId} {
+      allow read: if isOwner(existing());
+      allow list: if isOwner(resource.data);
+      allow create: if isSignedIn() && isValidId(subjectId) && isValidSubject(incoming());
+      allow update: if isOwner(existing()) && isValidSubject(incoming()) && 
+                    incoming().userId == existing().userId &&
+                    incoming().id == existing().id;
+      allow delete: if isOwner(existing());
+    }
+
+    match /students/{studentId} {
+      allow read: if isOwner(existing());
+      allow list: if isOwner(resource.data);
+      allow create: if isSignedIn() && isValidId(studentId) && isValidStudent(incoming());
+      allow update: if isOwner(existing()) && isValidStudent(incoming()) && 
+                    incoming().userId == existing().userId &&
+                    incoming().id == existing().id;
+      allow delete: if isOwner(existing());
+    }
+
+    match /journal_entries/{entryId} {
+      allow read: if isOwner(existing());
+      allow list: if isOwner(resource.data);
+      allow create: if isSignedIn() && isValidId(entryId) && isValidJournal(incoming());
+      allow update: if isOwner(existing()) && isValidJournal(incoming()) && 
+                    incoming().userId == existing().userId &&
+                    incoming().id == existing().id;
+      allow delete: if isOwner(existing());
+    }
+
+    match /attendance/{attendanceId} {
+      allow read: if isOwner(existing());
+      allow list: if isOwner(resource.data);
+      allow create: if isSignedIn() && isValidId(attendanceId) && isValidAttendance(incoming());
+      allow update: if isOwner(existing()) && isValidAttendance(incoming()) && 
+                    incoming().userId == existing().userId &&
+                    incoming().id == existing().id;
+      allow delete: if isOwner(existing());
+    }
+
+    match /assessments/{assessmentId} {
+      allow read: if isOwner(existing());
+      allow list: if isOwner(resource.data);
+      allow create: if isSignedIn() && isValidId(assessmentId) && isValidAssessment(incoming());
+      allow update: if isOwner(existing()) && isValidAssessment(incoming()) && 
+                    incoming().userId == existing().userId &&
+                    incoming().id == existing().id;
+      allow delete: if isOwner(existing());
+    }
+  }
+}

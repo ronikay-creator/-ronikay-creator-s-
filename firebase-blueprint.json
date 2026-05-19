@@ -1,0 +1,109 @@
+{
+  "entities": {
+    "Subject": {
+      "title": "Subject",
+      "description": "Subjects taught by the teacher",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "code": { "type": "string" }
+      },
+      "required": ["id", "userId", "name"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Students in the teacher's classes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "nisn": { "type": "string" },
+        "name": { "type": "string" },
+        "class": { "type": "string" },
+        "gender": { "type": "string", "enum": ["L", "P"] }
+      },
+      "required": ["id", "userId", "name", "class"]
+    },
+    "JournalEntry": {
+      "title": "Journal Entry",
+      "description": "Daily teaching journal entries",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "subjectId": { "type": "string" },
+        "topic": { "type": "string" },
+        "activity": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "userId", "date", "subjectId", "topic"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Student attendance records",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "studentId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "status": { "type": "string", "enum": ["Hadir", "Sakit", "Izin", "Alpa"] }
+      },
+      "required": ["id", "userId", "date", "studentId", "subjectId", "status"]
+    },
+    "Assessment": {
+      "title": "Assessment",
+      "description": "Daily assessment marks for students",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "studentId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "score": { "type": "number" },
+        "description": { "type": "string" }
+      },
+      "required": ["id", "userId", "date", "studentId", "subjectId", "score"]
+    },
+    "Test": {
+      "title": "Connection Test",
+      "description": "Used only for testing Firebase connection",
+      "type": "object",
+      "properties": {
+        "status": { "type": "string" }
+      },
+      "required": ["status"]
+    }
+  },
+  "firestore": {
+    "test/{docId}": {
+      "schema": "Test",
+      "description": "Basic connection testing collection"
+    },
+    "subjects/{subjectId}": {
+      "schema": "Subject",
+      "description": "Collection of subjects"
+    },
+    "students/{studentId}": {
+      "schema": "Student",
+      "description": "Collection of students"
+    },
+    "journal_entries/{entryId}": {
+      "schema": "JournalEntry",
+      "description": "Collection of teaching journals"
+    },
+    "attendance/{attendanceId}": {
+      "schema": "Attendance",
+      "description": "Collection of attendance records"
+    },
+    "assessments/{assessmentId}": {
+      "schema": "Assessment",
+      "description": "Collection of daily assessments"
+    }
+  }
+}
